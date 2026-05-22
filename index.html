@@ -348,6 +348,7 @@ async function loadRemoteData() {
 loadRemoteData();
 
 function fmtMoney(n) {
+  if (n === undefined || n === null || isNaN(n)) return '¥0.00';
   return '¥' + n.toLocaleString('zh-CN', {minimumFractionDigits:2, maximumFractionDigits:2});
 }
 
@@ -379,8 +380,8 @@ function updateDashboard() {
   document.getElementById('cumVisitorSum').textContent = c.visitors.toLocaleString();
   document.getElementById('cumAupSum').textContent = '¥' + c.aup.toFixed(2);
   document.getElementById('cumConvSum').textContent = c.conv_rate.toFixed(2) + '%';
-  document.getElementById('cumPromoSum').textContent = fmtMoney(d.cum_promotion);
-  const promoRate = c.gmv > 0 ? (d.cum_promotion / c.gmv * 100) : 0;
+  document.getElementById('cumPromoSum').textContent = fmtMoney(c.promo_cost);
+  const promoRate = c.gmv > 0 ? (c.promo_cost / c.gmv * 100) : 0;
   document.getElementById('cumPromoSub').textContent = 'GMV占比 ' + promoRate.toFixed(1) + '%';
 
   // 累计进度条
