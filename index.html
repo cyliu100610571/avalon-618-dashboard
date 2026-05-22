@@ -324,6 +324,7 @@ let presellCumData = {};
 let dashboardData = {};
 let skuData = {};
 let cumSkuData = [];
+let defaultSuggestions = {};
 window.remoteSuggestions = {};
 
 async function loadRemoteData() {
@@ -510,7 +511,7 @@ window.loadSuggestion = function(dateStr) {
   let text = '';
   if (window.remoteSuggestions && window.remoteSuggestions[key]) {
     text = window.remoteSuggestions[key];
-  } else if (defaultSuggestions && defaultSuggestions[key]) {
+  } else if (typeof defaultSuggestions !== 'undefined' && defaultSuggestions && defaultSuggestions[key]) {
     text = defaultSuggestions[key];
   } else {
     const saved = localStorage.getItem('tmall618_suggestion_' + key);
