@@ -324,7 +324,7 @@ let presellCumData = {};
 let dashboardData = {};
 let skuData = {};
 let cumSkuData = [];
-window.remoteSuggestion = '';
+window.remoteSuggestions = {};
 
 async function loadRemoteData() {
   try {
@@ -336,9 +336,9 @@ async function loadRemoteData() {
     dashboardData = payload.daily || {};
     skuData = payload.sku || {};
     cumSkuData = payload.cum_sku || [];
-    window.remoteSuggestion = payload.suggestion || '';
+    window.remoteSuggestions = payload.suggestions || {};
     updateDashboard();
-    loadSuggestion();
+    loadSuggestion(document.getElementById('dateSelector').value);
   } catch(e) {
     console.error('Failed to load data:', e);
     document.querySelector('.modules').innerHTML = '<div style="padding:40px;text-align:center;color:#666;">数据加载失败，请刷新重试<br><br><button onclick="location.reload()" style="padding:8px 20px;">刷新</button></div>';
@@ -491,22 +491,33 @@ function updateDashboard() {
   if (gmvAchieve < 80) risks.push('⚠️ 当日GMV完成率=' + gmvAchieve.toFixed(1) + '%，低于80%目标');
   document.getElementById('riskContent').innerHTML = risks.length ? risks.map(r => '<div class="risk">' + r + '</div>').join('') : '<div style="color:green;">✅ 暂无风险</div>';
 
-  // === 模块六：建议（可编辑，内容独立不随日期变化）===
-  // 内容由 loadSuggestion() 控制，此处不操作
+  // === 模块六：建议（按日期显示）===
+  // 内容由 loadSuggestion(dateStr) 控制
+  loadSuggestion(dateStr);
 }
 
 
 // === 模块六：建议编辑功能 ===
-window.loadSuggestion = function() {
-  const saved = localStorage.getItem('tmall618_suggestion');
+window.loadSuggestion = function(dateStr) {
   const content = document.getElementById('suggestionContent');
-  if (window.remoteSuggestion) {
-    content.innerText = window.remoteSuggestion;
-  } else if (saved) {
-    content.innerText = saved;
-  } else {
-    content.innerText = '暂无建议，请联系数据负责人更新。';
+  // Convert "5/21" to "2026-05-21"
+  let key = '';
+  if (dateStr) {
+    const [m, d] = dateStr.split('/');
+    key = '2026-' + m.padStart(2,'0') + '-' + d.padStart(2,'0');
   }
+  // Try remote suggestions first, then default, then localStorage
+  let text = '';
+  if (window.remoteSuggestions && window.remoteSuggestions[key]) {
+    text = window.remoteSuggestions[key];
+  } else if (defaultSuggestions && defaultSuggestions[key]) {
+    text = defaultSuggestions[key];
+  } else {
+    const saved = localStorage.getItem('tmall618_suggestion_' + key);
+    text = saved || '暂无建议，请联系数据负责人更新。';
+  }
+  content.innerText = text;
+  document.getElementById('suggestionEditor').value = text;
 };
 
 window.toggleEditSuggestion = function() {
@@ -528,16 +539,22 @@ window.saveSuggestion = function() {
   const editBtn = document.getElementById('editSuggestionBtn');
   const saveBtn = document.getElementById('saveSuggestionBtn');
   const text = editor.value;
-  localStorage.setItem('tmall618_suggestion', text);
+  const dateStr = document.getElementById('dateSelector').value;
+  let key = '';
+  if (dateStr) {
+    const [m, d] = dateStr.split('/');
+    key = '2026-' + m.padStart(2,'0') + '-' + d.padStart(2,'0');
+  }
+  localStorage.setItem('tmall618_suggestion_' + key, text);
   content.innerText = text;
   content.style.display = 'block';
   editor.style.display = 'none';
   editBtn.style.display = 'inline-block';
   saveBtn.style.display = 'none';
-  alert('已保存到本地浏览器。如需同步给所有人，请联系数据负责人运行发布脚本。');
+  alert('已保存到本地浏览器（' + key + '）。如需同步给所有人，请联系数据负责人运行发布脚本。');
 };
 
-loadSuggestion();
+loadSuggestion(document.getElementById('dateSelector').value);
 </script>
 </body>
 </html>
