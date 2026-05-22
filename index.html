@@ -402,18 +402,21 @@ function updateDashboard() {
   document.getElementById('psDepositAmt').textContent = fmtMoney(pc.deposit_amount);
 
   // === 模块一：核心指标 ===
-  const gmvAchieve = d.gmv_target > 0 ? (d.gmv / d.gmv_target * 100) : 0;
+  const gmvTarget = d.gmv_target || 0;
+  const nmvTarget = d.nmv_target || 0;
+  const avgPrice = d.avg_price || 0;
+  const gmvAchieve = gmvTarget > 0 ? (d.gmv / gmvTarget * 100) : 0;
   document.getElementById('gmv').textContent = fmtMoney(d.gmv);
-  document.getElementById('gmvTarget').textContent = '目标 ' + d.gmv_target.toLocaleString() + ' 元 | 达成率 ' + gmvAchieve.toFixed(1) + '%';
+  document.getElementById('gmvTarget').textContent = '目标 ' + gmvTarget.toLocaleString() + ' 元 | 达成率 ' + gmvAchieve.toFixed(1) + '%';
 
-  const nmvAchieve = d.nmv_target > 0 ? (d.nmv / d.nmv_target * 100) : 0;
+  const nmvAchieve = nmvTarget > 0 ? (d.nmv / nmvTarget * 100) : 0;
   document.getElementById('nmv').textContent = fmtMoney(d.nmv);
-  document.getElementById('nmvTarget').textContent = '目标 ' + d.nmv_target.toLocaleString() + ' 元 | 达成率 ' + nmvAchieve.toFixed(1) + '%';
+  document.getElementById('nmvTarget').textContent = '目标 ' + nmvTarget.toLocaleString() + ' 元 | 达成率 ' + nmvAchieve.toFixed(1) + '%';
 
-  document.getElementById('orderQty').textContent = d.qty.toLocaleString();
+  document.getElementById('orderQty').textContent = (d.qty || 0).toLocaleString();
 
   // 客单价：直接取Excel K列
-  document.getElementById('pricePer').textContent = '¥' + d.avg_price.toFixed(2);
+  document.getElementById('pricePer').textContent = '¥' + avgPrice.toFixed(2);
 
   document.getElementById('visitors').textContent = d.visitors.toLocaleString();
   document.getElementById('convRate').textContent = '转化率 ' + (d.conv_rate*100).toFixed(2) + '%';
