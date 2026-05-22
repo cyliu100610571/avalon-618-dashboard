@@ -328,7 +328,7 @@ window.remoteSuggestion = '';
 
 async function loadRemoteData() {
   try {
-    const DATA_URL = 'https://avalon-618-dashboard-1342248980.cos.ap-shanghai.myqcloud.com/data.json';
+    const DATA_URL = './data.json';
     const resp = await fetch(DATA_URL + '?t=' + Date.now());
     const payload = await resp.json();
     cumulativeData = payload.cumulative || {};
@@ -348,8 +348,7 @@ async function loadRemoteData() {
 loadRemoteData();
 
 function fmtMoney(n) {
-  if (n === undefined || n === null || isNaN(n)) return '¥-';
-  return '¥' + Number(n).toLocaleString('zh-CN', {minimumFractionDigits:2, maximumFractionDigits:2});
+  return '¥' + n.toLocaleString('zh-CN', {minimumFractionDigits:2, maximumFractionDigits:2});
 }
 
 function isPresellPeriod(dateStr) {
@@ -380,8 +379,8 @@ function updateDashboard() {
   document.getElementById('cumVisitorSum').textContent = c.visitors.toLocaleString();
   document.getElementById('cumAupSum').textContent = '¥' + c.aup.toFixed(2);
   document.getElementById('cumConvSum').textContent = c.conv_rate.toFixed(2) + '%';
-  document.getElementById('cumPromoSum').textContent = fmtMoney(c.promo_cost);
-  const promoRate = c.gmv > 0 ? (c.promo_cost / c.gmv * 100) : 0;
+  document.getElementById('cumPromoSum').textContent = fmtMoney(d.cum_promotion);
+  const promoRate = c.gmv > 0 ? (d.cum_promotion / c.gmv * 100) : 0;
   document.getElementById('cumPromoSub').textContent = 'GMV占比 ' + promoRate.toFixed(1) + '%';
 
   // 累计进度条
@@ -402,21 +401,18 @@ function updateDashboard() {
   document.getElementById('psDepositAmt').textContent = fmtMoney(pc.deposit_amount);
 
   // === 模块一：核心指标 ===
-  const gmvTarget = d.gmv_target || 0;
-  const nmvTarget = d.nmv_target || 0;
-  const avgPrice = d.avg_price || 0;
-  const gmvAchieve = gmvTarget > 0 ? (d.gmv / gmvTarget * 100) : 0;
+  const gmvAchieve = d.gmv_target > 0 ? (d.gmv / d.gmv_target * 100) : 0;
   document.getElementById('gmv').textContent = fmtMoney(d.gmv);
-  document.getElementById('gmvTarget').textContent = '目标 ' + gmvTarget.toLocaleString() + ' 元 | 达成率 ' + gmvAchieve.toFixed(1) + '%';
+  document.getElementById('gmvTarget').textContent = '目标 ' + d.gmv_target.toLocaleString() + ' 元 | 达成率 ' + gmvAchieve.toFixed(1) + '%';
 
-  const nmvAchieve = nmvTarget > 0 ? (d.nmv / nmvTarget * 100) : 0;
+  const nmvAchieve = d.nmv_target > 0 ? (d.nmv / d.nmv_target * 100) : 0;
   document.getElementById('nmv').textContent = fmtMoney(d.nmv);
-  document.getElementById('nmvTarget').textContent = '目标 ' + nmvTarget.toLocaleString() + ' 元 | 达成率 ' + nmvAchieve.toFixed(1) + '%';
+  document.getElementById('nmvTarget').textContent = '目标 ' + d.nmv_target.toLocaleString() + ' 元 | 达成率 ' + nmvAchieve.toFixed(1) + '%';
 
-  document.getElementById('orderQty').textContent = (d.qty || 0).toLocaleString();
+  document.getElementById('orderQty').textContent = d.qty.toLocaleString();
 
   // 客单价：直接取Excel K列
-  document.getElementById('pricePer').textContent = '¥' + avgPrice.toFixed(2);
+  document.getElementById('pricePer').textContent = '¥' + d.avg_price.toFixed(2);
 
   document.getElementById('visitors').textContent = d.visitors.toLocaleString();
   document.getElementById('convRate').textContent = '转化率 ' + (d.conv_rate*100).toFixed(2) + '%';
