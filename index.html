@@ -345,6 +345,155 @@ async function loadRemoteData() {
   }
 }
 
+loadRemoteData();
+
+function fmtMoney(n) {
+  return '¥' + n.toLocaleString('zh-CN', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function isPresellPeriod(dateStr) {
+  const [m, day] = dateStr.split('/').map(Number);
+  const d = new Date(2026, m-1, day);
+  const start = new Date(2026, 4, 21);
+  const end = new Date(2026, 5, 3);
+  return d >= start && d <= end;
+}
+
+function updateDashboard() {
+  const dateStr = document.getElementById('dateSelector').value;
+  const d = dashboardData[dateStr];
+  if (!d) return;
+  const c = cumulativeData;
+  const pc = presellCumData;
+  const sku = skuData[dateStr] || [];
+
+  // === 累计概览（来自生意参谋截图） ===
+  const gmvRate = c.gmv / 390000;
+  const nmvRate = c.nmv / 312000;
+  document.getElementById('cumGmvSum').textContent = fmtMoney(c.gmv);
+  document.getElementById('cumGmvSub').textContent = '支付金额 | 完成度 ' + (gmvRate*100).toFixed(2) + '%';
+  document.getElementById('cumNmvSum').textContent = fmtMoney(c.nmv);
+  document.getElementById('cumNmvSub').textContent = '全店商品净支付金额 | 完成度 ' + (nmvRate*100).toFixed(2) + '%';
+  document.getElementById('cumQtySum').textContent = c.qty.toLocaleString();
+  document.getElementById('cumBuyerSum').textContent = c.buyers.toLocaleString();
+  document.getElementById('cumVisitorSum').textContent = c.visitors.toLocaleString();
+  document.getElementById('cumAupSum').textContent = '¥' + c.aup.toFixed(2);
+  document.getElementById('cumConvSum').textContent = c.conv_rate.toFixed(2) + '%';
+  document.getElementById('cumPromoSum').textContent = fmtMoney(d.cum_promotion);
+  const promoRate = c.gmv > 0 ? (d.cum_promotion / c.gmv * 100) : 0;
+  document.getElementById('cumPromoSub').textContent = 'GMV占比 ' + promoRate.toFixed(1) + '%';
+
+  // 累计进度条
+  document.getElementById('cumProgressFill').style.width = (gmvRate*100).toFixed(1) + '%';
+  document.getElementById('cumProgressText').textContent = '累计GMV: ' + fmtMoney(c.gmv) + ' / 390,000元 (' + (gmvRate*100).toFixed(2) + '%)';
+  const [m, day] = dateStr.split('/').map(Number);
+  const selectedDate = new Date(2026, m-1, day);
+  const endDate = new Date(2026, 5, 21);
+  const remain = Math.max(0, Math.ceil((endDate - selectedDate) / (1000*60*60*24)));
+  document.getElementById('cumProgressHint').textContent = '剩余' + remain + '天（截止6/21）';
+
+  // === 预售累计核心指标 ===
+  // 预售订单金额 = 定金支付件数 * 218
+  const psOrderAmt = pc.deposit_qty * 218;
+  document.getElementById('psOrderAmt').textContent = fmtMoney(psOrderAmt);
+  document.getElementById('psDepositQty').textContent = pc.deposit_qty.toLocaleString();
+  document.getElementById('psDepositBuyers').textContent = pc.deposit_buyers.toLocaleString();
+  document.getElementById('psDepositAmt').textContent = fmtMoney(pc.deposit_amount);
+
+  // === 模块一：核心指标 ===
+  const gmvAchieve = d.gmv_target > 0 ? (d.gmv / d.gmv_target * 100) : 0;
+  document.getElementById('gmv').textContent = fmtMoney(d.gmv);
+  document.getElementById('gmvTarget').textContent = '目标 ' + d.gmv_target.toLocaleString() + ' 元 | 达成率 ' + gmvAchieve.toFixed(1) + '%';
+
+  const nmvAchieve = d.nmv_target > 0 ? (d.nmv / d.nmv_target * 100) : 0;
+  document.getElementById('nmv').textContent = fmtMoney(d.nmv);
+  document.getElementById('nmvTarget').textContent = '目标 ' + d.nmv_target.toLocaleString() + ' 元 | 达成率 ' + nmvAchieve.toFixed(1) + '%';
+
+  document.getElementById('orderQty').textContent = d.qty.toLocaleString();
+
+  // 客单价：直接取Excel K列
+  document.getElementById('pricePer').textContent = '¥' + d.avg_price.toFixed(2);
+
+  document.getElementById('visitors').textContent = d.visitors.toLocaleString();
+  document.getElementById('convRate').textContent = '转化率 ' + (d.conv_rate*100).toFixed(2) + '%';
+
+  // 全店ROI = GMV / promotion_cost, 目标=8
+  const storeRoi = d.promotion_cost > 0 ? (d.gmv / d.promotion_cost) : 0;
+  const roiAchieve = storeRoi > 0 ? (storeRoi / 8 * 100) : 0;
+  document.getElementById('roi').textContent = storeRoi.toFixed(2);
+  document.getElementById('roiTarget').textContent = '目标 8 | 达成率 ' + roiAchieve.toFixed(1) + '%';
+
+  document.getElementById('promoCost').textContent = fmtMoney(d.promotion_cost);
+
+  // 每日预售数据（仅5/21-6/3显示）
+  const presellBar = document.getElementById('dailyPresellBar');
+  if (isPresellPeriod(dateStr)) {
+    presellBar.style.display = 'block';
+    document.getElementById('dailyPresellQty').textContent = (d.presell_cart_qty || 0).toLocaleString() + '件';
+  } else {
+    presellBar.style.display = 'none';
+  }
+
+  // === 模块二：新老客分析 ===
+  const amtNewRet = d.amt_new_ret || 0;
+  const amtNewBuy = d.amt_new_buy || 0;
+  const amtRetRep = d.amt_ret_rep || 0;
+  const totalAmt = amtNewRet + amtNewBuy + amtRetRep;
+  const newAmt = amtNewRet + amtNewBuy;
+  const newRate = totalAmt > 0 ? (newAmt / totalAmt * 100) : 0;
+
+  let tableHtml = '<table class="table"><thead><tr><th>客户类型</th><th>支付金额</th><th>占比</th></tr></thead><tbody>';
+  tableHtml += '<tr><td>新访客&已购</td><td>' + fmtMoney(amtNewRet) + '</td><td>' + (totalAmt>0?(amtNewRet/totalAmt*100).toFixed(1)+'%':'-') + '</td></tr>';
+  tableHtml += '<tr><td>未购买&购买</td><td>' + fmtMoney(amtNewBuy) + '</td><td>' + (totalAmt>0?(amtNewBuy/totalAmt*100).toFixed(1)+'%':'-') + '</td></tr>';
+  tableHtml += '<tr><td><b>小计：新客</b></td><td><b>' + fmtMoney(newAmt) + '</b></td><td><b>' + newRate.toFixed(1) + '%</b></td></tr>';
+  tableHtml += '<tr><td>已购&回购</td><td>' + fmtMoney(amtRetRep) + '</td><td>' + (totalAmt>0?(amtRetRep/totalAmt*100).toFixed(1)+'%':'-') + '</td></tr>';
+  tableHtml += '</tbody></table>';
+  document.getElementById('customerTable').innerHTML = tableHtml;
+
+  let statusIcon = newRate >= 40 ? '✅' : '⚠️';
+  let statusText = newRate >= 40 ? '表现良好' : '新客占比较低';
+  document.getElementById('customerSummary').innerHTML = '📊 新客占比' + newRate.toFixed(1) + '%，' + statusText + ' ' + statusIcon;
+
+  // === 模块三：推广费用追踪（加合计行） ===
+  const channels = [
+    {key:'ztc', name:'直通车', cost:d.cost_ztc||0, gmv:d.gmv_ztc||0},
+    {key:'wxt', name:'万象台-全站推', cost:d.cost_wxt||0, gmv:d.gmv_wxt||0},
+    {key:'rq', name:'人群推广', cost:d.cost_rq||0, gmv:d.gmv_rq||0},
+    {key:'tbk', name:'淘宝客', cost:d.cost_tbk||0, gmv:d.gmv_tbk||0}
+  ];
+  let promoHtml = '';
+  let totalCost = 0, totalGmv = 0;
+  for (const ch of channels) {
+    const cost = ch.cost;
+    const gmv = ch.gmv;
+    const roi = cost > 0 ? (gmv / cost) : 0;
+    const roiStr = cost > 0 ? roi.toFixed(1) : (gmv > 0 ? '∞' : '-');
+    const status = gmv > 0 ? (roi >= 3 ? '✅达标' : '⚠️偏低') : '⚠️无成交';
+    promoHtml += '<tr><td>' + ch.name + '</td><td>' + fmtMoney(cost) + '</td><td>' + fmtMoney(gmv) + '</td><td>' + roiStr + '</td><td>' + status + '</td></tr>';
+    totalCost += cost; totalGmv += gmv;
+  }
+  const totalRoi = totalCost > 0 ? (totalGmv / totalCost) : 0;
+  promoHtml += '<tr style="font-weight:bold;background:#f5f7fa;"><td>合计</td><td>' + fmtMoney(totalCost) + '</td><td>' + fmtMoney(totalGmv) + '</td><td>' + totalRoi.toFixed(1) + '</td><td>' + (totalRoi >= 3 ? '✅达标' : '⚠️偏低') + '</td></tr>';
+  document.getElementById('promoBody').innerHTML = promoHtml;
+
+  // === 模块四：SKU销售数据 ===
+  let skuHtml = '';
+  for (const s of sku) {
+    skuHtml += '<tr><td>' + s.sku_id + '</td><td>' + s.sku_name + '</td><td>' + fmtMoney(s.pay_amt) + '</td><td>' + s.pay_qty.toLocaleString() + '</td><td>' + (s.add_cart||0).toLocaleString() + '</td></tr>';
+  }
+  if (!skuHtml) skuHtml = '<tr><td colspan="5" style="text-align:center;color:#999;">暂无数据</td></tr>';
+  document.getElementById('skuBody').innerHTML = skuHtml;
+
+  // === 模块五：风险预警 ===
+  let risks = [];
+  if (storeRoi < 2) risks.push('⚠️ 全店ROI=' + storeRoi.toFixed(2) + '，低于2.0警戒线');
+  if (gmvAchieve < 80) risks.push('⚠️ 当日GMV完成率=' + gmvAchieve.toFixed(1) + '%，低于80%目标');
+  document.getElementById('riskContent').innerHTML = risks.length ? risks.map(r => '<div class="risk">' + r + '</div>').join('') : '<div style="color:green;">✅ 暂无风险</div>';
+
+  // === 模块六：建议（可编辑，内容独立不随日期变化）===
+  // 内容由 loadSuggestion() 控制，此处不操作
+}
+
 
 // === 模块六：建议编辑功能 ===
 window.loadSuggestion = function() {
