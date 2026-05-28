@@ -176,39 +176,40 @@ body { font-family: 'Microsoft YaHei', Arial, sans-serif; background:#f0f2f5; co
           <div class="cum-progress-text" id="cumProgressText"></div>
         </div>
 
-        <!-- 预售尾款期核心指标 -->
+        <!-- 预售期核心指标（定金期 5.13~5.20） -->
         <div class="presell-section">
-          <div class="presell-title">🛒 预售尾款期核心指标（5.27~6.3 截至5/27）</div>
+          <div class="presell-title">🛒 预售期核心指标（定金期 5.13~5.20）</div>
           <div class="cum-summary">
             <div class="cum-card">
               <div class="label">预售订单金额</div>
               <div class="value" id="psOrderAmt">-</div>
             </div>
             <div class="cum-card">
+              <div class="label">预售件数</div>
+              <div class="value" id="psPresellQty">-</div>
+            </div>
+            <div class="cum-card">
+              <div class="label">预售买家数</div>
+              <div class="value" id="psPresellBuyers">-</div>
+            </div>
+            <div class="cum-card">
+              <div class="label">定金支付金额</div>
+              <div class="value" id="psDepositAmt">-</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 尾款期核心指标（5.27~6.3 截至5/27） -->
+        <div class="presell-section">
+          <div class="presell-title">💰 尾款期核心指标（5.27~6.3 截至5/27）</div>
+          <div class="cum-summary">
+            <div class="cum-card">
               <div class="label">尾款支付件数</div>
               <div class="value" id="psTailQty">-</div>
             </div>
             <div class="cum-card">
-              <div class="label">尾款支付买家数</div>
-              <div class="value" id="psTailBuyers">-</div>
-            </div>
-            <div class="cum-card">
-              <div class="label">尾款支付金额</div>
-              <div class="value" id="psTailAmt">-</div>
-            </div>
-          </div>
-          <div class="cum-summary" style="margin-top:10px;">
-            <div class="cum-card">
               <div class="label">支付完结率（件数）</div>
               <div class="value" id="psCompQty">-</div>
-            </div>
-            <div class="cum-card">
-              <div class="label">支付完结率（金额）</div>
-              <div class="value" id="psCompAmt">-</div>
-            </div>
-            <div class="cum-card">
-              <div class="label">支付完结率（买家）</div>
-              <div class="value" id="psCompBuyers">-</div>
             </div>
           </div>
         </div>
@@ -385,7 +386,8 @@ function updateDashboard() {
   const d = dashboardData[dateStr];
   if (!d) return;
   const c = cumulativeData;
-  const pc = presellCumData;
+  const pp = presalePeriodData;
+  const tp = tailPayData;
   const sku = skuData[dateStr] || [];
 
   // === 累计概览（来自生意参谋截图） ===
@@ -413,14 +415,15 @@ function updateDashboard() {
   const remain = Math.max(0, Math.ceil((endDate - selectedDate) / (1000*60*60*24)));
   document.getElementById('cumProgressHint').textContent = '剩余' + remain + '天（截止6/21）';
 
-  // === 预售尾款期核心指标 ===
-  document.getElementById('psOrderAmt').textContent = fmtMoney(pc.presell_order_amount);
-  document.getElementById('psTailQty').textContent = pc.tail_pay_qty.toLocaleString();
-  document.getElementById('psTailBuyers').textContent = pc.tail_pay_buyers.toLocaleString();
-  document.getElementById('psTailAmt').textContent = fmtMoney(pc.tail_pay_amount);
-  document.getElementById('psCompQty').textContent = pc.completion_rate_qty.toFixed(2) + '%';
-  document.getElementById('psCompAmt').textContent = pc.completion_rate_amount.toFixed(2) + '%';
-  document.getElementById('psCompBuyers').textContent = pc.completion_rate_buyers.toFixed(2) + '%';
+  // === 预售期核心指标（定金期，固定） ===
+  document.getElementById('psOrderAmt').textContent = fmtMoney(pp.presell_order_amount);
+  document.getElementById('psPresellQty').textContent = pp.presell_qty.toLocaleString() + '件';
+  document.getElementById('psPresellBuyers').textContent = pp.presell_buyers.toLocaleString() + '人';
+  document.getElementById('psDepositAmt').textContent = fmtMoney(pp.presell_deposit_amount);
+
+  // === 尾款期核心指标（每日更新） ===
+  document.getElementById('psTailQty').textContent = tp.tail_pay_qty.toLocaleString() + '件';
+  document.getElementById('psCompQty').textContent = tp.completion_rate_qty.toFixed(2) + '%';
 
   // === 模块一：核心指标 ===
   const gmvAchieve = d.gmv_target > 0 ? (d.gmv / d.gmv_target * 100) : 0;
