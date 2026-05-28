@@ -10,7 +10,10 @@
     "promo_cost": 15675.18
   },
   "presell": {
-    "presell_order_amount": 37539.73,
+    "presell_order_amount": 23980.0,
+    "presell_qty": 110,
+    "presell_buyers": 105,
+    "presell_deposit_amount": 4400.0,
     "tail_pay_amount": 12527.19,
     "tail_pay_qty": 72,
     "tail_pay_buyers": 68,

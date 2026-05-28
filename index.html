@@ -176,9 +176,9 @@ body { font-family: 'Microsoft YaHei', Arial, sans-serif; background:#f0f2f5; co
           <div class="cum-progress-text" id="cumProgressText"></div>
         </div>
 
-        <!-- 预售期核心指标（定金期 5.13~5.20） -->
+        <!-- 预售期核心指标（定金期 5.21~5.26） -->
         <div class="presell-section">
-          <div class="presell-title">🛒 预售期核心指标（定金期 5.13~5.20）</div>
+          <div class="presell-title">🛒 预售期核心指标（定金期 5.21~5.26）</div>
           <div class="cum-summary">
             <div class="cum-card">
               <div class="label">预售订单金额</div>
@@ -352,6 +352,9 @@ async function loadRemoteData() {
     skuData = payload.sku || {};
     cumSkuData = payload.cum_sku || [];
     window.remoteSuggestions = payload.suggestions || {};
+    // Expose presalePeriodData and tailPayData for updateDashboard()
+    window.presalePeriodData = presellCumData;
+    window.tailPayData = presellCumData;
     updateDashboard();
     loadSuggestion(document.getElementById('dateSelector').value);
   } catch(e) {
